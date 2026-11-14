@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}Productos{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div><h1 class="h3 fw-bold mb-1">Productos e Inventario</h1><p class="text-muted small mb-0">Catálogo, precios en COP y control de existencias.</p></div>
+  <button class="btn btn-primary fw-semibold" data-bs-toggle="modal" data-bs-target="#modalNuevoProd"><i class="bi bi-plus-lg me-1"></i> Nuevo producto</button>
+</div>
+
+<form class="vs-card p-3 mb-4 row g-2" method="GET">
+  <div class="col-md-6"><input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Buscar por código o nombre..."></div>
+  <div class="col-md-4">
+    <select name="categoria" class="form-select">
+      <option value="Todas">Todas las categorías</option>
+      {% for cat in categorias %}<option value="{{ cat }}" {% if categoria_sel == cat %}selected{% endif %}>{{ cat }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="col-md-2"><button class="btn btn-outline-primary w-100">Filtrar</button></div>
+</form>
+
+<div class="vs-card overflow-hidden">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0 small align-middle">
+      <thead class="table-light"><tr><th>Código</th><th>Producto</th><th>Categoría</th><th class="text-end">P. Compra</th><th class="text-end">P. Venta</th><th class="text-end">Stock</th><th>Estado</th><th class="text-end">Acciones</th></tr></thead>
+      <tbody>
+        {% for p in productos %}
+        <tr>
+          <td class="fw-semibold">{{ p.codigo }}</td>
+          <td><strong>{{ p.nombre }}</strong><br><span class="text-muted">{{ p.descripcion }}</span></td>
+          <td>{{ p.categoria }}</td>
+          <td class="text-end tabular-nums">{{ p.precio_compra|cop }}</td>
+          <td class="text-end tabular-nums fw-semibold">{{ p.precio_venta|cop }}</td>
+          <td class="text-end tabular-nums">{{ p.cantidad_disponible }} / {{ p.stock_minimo }}</td>
+          <td><span class="badge {% if p.estado == 'Disponible' %}bg-success{% elif p.estado == 'Bajo inventario' %}bg-warning text-dark{% else %}bg-danger{% endif %}">{{ p.estado }}</span></td>
+          <td class="text-end">
+            <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#editProd{{ p.id }}"><i class="bi bi-pencil"></i></button>
+            <form method="POST" action="{{ url_for('productos.eliminar', producto_id=p.id) }}" class="d-inline">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+            </form>
+          </td>
+        </tr>
+        <div class="modal fade" id="editProd{{ p.id }}" tabindex="-1">
+          <div class="modal-dialog">
+            <form class="modal-content" method="POST" action="{{ url_for('productos.editar', producto_id=p.id) }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <div class="modal-header"><h5 class="modal-title">Editar producto</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+              <div class="modal-body row g-3">
+                <div class="col-6"><label class="form-label small">Código</label><input name="codigo" value="{{ p.codigo }}" class="form-control" required></div>
+                <div class="col-6"><label class="form-label small">Categoría</label><input name="categoria" value="{{ p.categoria }}" class="form-control" required></div>
+                <div class="col-12"><label class="form-label small">Nombre</label><input name="nombre" value="{{ p.nombre }}" class="form-control" required></div>
+                <div class="col-12"><label class="form-label small">Descripción</label><textarea name="descripcion" class="form-control">{{ p.descripcion }}</textarea></div>
+                <div class="col-6"><label class="form-label small">Precio compra</label><input type="number" name="precio_compra" value="{{ p.precio_compra }}" min="0" class="form-control" required></div>
+                <div class="col-6"><label class="form-label small">Precio venta</label><input type="number" name="precio_venta" value="{{ p.precio_venta }}" min="0" class="form-control" required></div>
+                <div class="col-6"><label class="form-label small">Stock</label><input type="number" name="cantidad_disponible" value="{{ p.cantidad_disponible }}" min="0" class="form-control" required></div>
+                <div class="col-6"><label class="form-label small">Stock mínimo</label><input type="number" name="stock_minimo" value="{{ p.stock_minimo }}" min="0" class="form-control" required></div>
+              </div>
+              <div class="modal-footer"><button type="submit" class="btn btn-primary">Actualizar</button></div>
+            </form>
+          </div>
+        </div>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="modal fade" id="modalNuevoProd" tabindex="-1">
+  <div class="modal-dialog">
+    <form class="modal-content" method="POST" action="{{ url_for('productos.crear') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="modal-header"><h5 class="modal-title">Nuevo producto</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body row g-3">
+        <div class="col-6"><label class="form-label small">Código</label><input name="codigo" class="form-control" required></div>
+        <div class="col-6"><label class="form-label small">Categoría</label><input name="categoria" class="form-control" required></div>
+        <div class="col-12"><label class="form-label small">Nombre</label><input name="nombre" class="form-control" required></div>
+        <div class="col-12"><label class="form-label small">Descripción</label><textarea name="descripcion" class="form-control"></textarea></div>
+        <div class="col-6"><label class="form-label small">Precio compra</label><input type="number" name="precio_compra" min="0" class="form-control" required></div>
+        <div class="col-6"><label class="form-label small">Precio venta</label><input type="number" name="precio_venta" min="0" class="form-control" required></div>
+        <div class="col-6"><label class="form-label small">Cantidad</label><input type="number" name="cantidad_disponible" value="0" min="0" class="form-control" required></div>
+        <div class="col-6"><label class="form-label small">Stock mínimo</label><input type="number" name="stock_minimo" value="5" min="0" class="form-control" required></div>
+      </div>
+      <div class="modal-footer"><button type="submit" class="btn btn-primary">Guardar producto</button></div>
+    </form>
+  </div>
+</div>
+{% endblock %}

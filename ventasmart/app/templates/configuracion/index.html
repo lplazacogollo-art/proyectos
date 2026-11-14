@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Configuración{% endblock %}
+{% block content %}
+<h1 class="h3 fw-bold mb-4">Configuración del Sistema</h1>
+<div class="row g-4">
+  <div class="col-lg-7">
+    <form class="vs-card p-4" method="POST">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="accion" value="negocio">
+      <h2 class="h6 fw-bold mb-3">Datos del negocio y parámetros comerciales</h2>
+      <div class="row g-3">
+        <div class="col-md-6"><label class="form-label small">Nombre comercial</label><input name="nombre_comercial" value="{{ cfg.nombre_comercial }}" class="form-control" required></div>
+        <div class="col-md-6"><label class="form-label small">NIT</label><input name="nit" value="{{ cfg.nit }}" class="form-control" required></div>
+        <div class="col-12"><label class="form-label small">Dirección</label><input name="direccion" value="{{ cfg.direccion }}" class="form-control" required></div>
+        <div class="col-md-6"><label class="form-label small">Teléfono</label><input name="telefono" value="{{ cfg.telefono }}" class="form-control" required></div>
+        <div class="col-md-6"><label class="form-label small">Correo</label><input type="email" name="correo" value="{{ cfg.correo }}" class="form-control" required></div>
+        <div class="col-md-3"><label class="form-label small">IVA (%)</label><input type="number" step="0.5" name="porcentaje_impuesto" value="{{ cfg.porcentaje_impuesto }}" class="form-control" required></div>
+        <div class="col-md-3"><label class="form-label small">Desc. Máx (%)</label><input type="number" step="0.5" name="descuento_maximo" value="{{ cfg.descuento_maximo }}" class="form-control" required></div>
+        <div class="col-md-3"><label class="form-label small">Prefijo</label><input name="prefijo_consecutivo" value="{{ cfg.prefijo_consecutivo }}" class="form-control" required></div>
+        <div class="col-md-3"><label class="form-label small">Consecutivo</label><input type="number" name="consecutivo_actual" value="{{ cfg.consecutivo_actual }}" class="form-control" required></div>
+      </div>
+      <button type="submit" class="btn btn-primary mt-3">Guardar configuración</button>
+    </form>
+  </div>
+  <div class="col-lg-5">
+    <form class="vs-card p-4" method="POST">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="accion" value="usuario">
+      <h2 class="h6 fw-bold mb-3">Perfil del usuario</h2>
+      <div class="mb-3"><label class="form-label small">Nombre</label><input name="nombre" value="{{ current_user.nombre }}" class="form-control" required></div>
+      <div class="mb-3"><label class="form-label small">Correo</label><input type="email" name="correo" value="{{ current_user.correo }}" class="form-control" required></div>
+      <div class="mb-3"><label class="form-label small">Contraseña actual (opcional)</label><input type="password" name="password_actual" class="form-control"></div>
+      <div class="mb-3"><label class="form-label small">Nueva contraseña</label><input type="password" name="password_nueva" minlength="6" class="form-control"></div>
+      <button type="submit" class="btn btn-dark">Actualizar perfil</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

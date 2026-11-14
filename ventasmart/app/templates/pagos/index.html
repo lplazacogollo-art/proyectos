@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Pagos{% endblock %}
+{% block content %}
+<h1 class="h3 fw-bold mb-4">Registro de Pagos</h1>
+
+<form class="vs-card p-4 mb-4 row g-3 align-items-end" method="POST" action="{{ url_for('pagos.index') }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="col-md-5">
+    <label class="form-label small fw-semibold">Venta con saldo pendiente</label>
+    <select name="venta_id" class="form-select" required>
+      <option value="">Seleccionar venta...</option>
+      {% for v in ventas_pendientes %}
+      <option value="{{ v.id }}">{{ v.consecutivo }} — {{ v.cliente.nombre_completo }} (Saldo: {{ v.saldo_pendiente|cop }})</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-2"><label class="form-label small fw-semibold">Monto (COP)</label><input type="number" name="monto_pagado" min="1" class="form-control" required></div>
+  <div class="col-md-2"><label class="form-label small fw-semibold">Método</label><select name="metodo_pago" class="form-select"><option>Efectivo</option><option>Transferencia</option><option>Tarjeta</option><option>Otro</option></select></div>
+  <div class="col-md-2"><label class="form-label small fw-semibold">Referencia</label><input type="text" name="referencia" class="form-control"></div>
+  <div class="col-md-1"><button type="submit" class="btn btn-primary w-100">Pagar</button></div>
+</form>
+
+<div class="vs-card overflow-hidden">
+  <table class="table table-hover mb-0 small">
+    <thead class="table-light"><tr><th>N° Pago</th><th>Venta</th><th>Cliente</th><th>Fecha</th><th>Método</th><th>Referencia</th><th class="text-end">Monto</th></tr></thead>
+    <tbody>
+      {% for p in pagos %}
+      <tr>
+        <td class="fw-semibold">{{ p.numero_pago }}</td>
+        <td><a href="{{ url_for('ventas.detalle', venta_id=p.venta_id) }}">{{ p.venta.consecutivo }}</a></td>
+        <td>{{ p.venta.cliente.nombre_completo }}</td>
+        <td>{{ p.fecha.strftime('%d/%m/%Y %H:%M') if p.fecha else '' }}</td>
+        <td>{{ p.metodo_pago }}</td>
+        <td>{{ p.referencia or '—' }}</td>
+        <td class="text-end tabular-nums fw-semibold text-success">{{ p.monto_pagado|cop }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

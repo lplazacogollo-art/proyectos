@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h1 class="h3 fw-bold mb-1">Dashboard Comercial</h1>
+    <p class="text-muted small mb-0">Indicadores en tiempo real desde Neon PostgreSQL.</p>
+  </div>
+  <a href="{{ url_for('ventas.pos') }}" class="btn btn-primary fw-semibold"><i class="bi bi-cart-plus me-1"></i> Ir al POS</a>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-xl-2"><div class="vs-card p-3"><div class="text-muted small">Ventas del día</div><div class="fs-5 fw-bold tabular-nums mt-1">{{ ventas_hoy|cop }}</div></div></div>
+  <div class="col-6 col-xl-2"><div class="vs-card p-3"><div class="text-muted small">Ingresos del mes</div><div class="fs-5 fw-bold tabular-nums mt-1">{{ ingresos_mes|cop }}</div></div></div>
+  <div class="col-6 col-xl-2"><div class="vs-card p-3"><div class="text-muted small">Total ventas</div><div class="fs-5 fw-bold tabular-nums mt-1">{{ total_ventas }}</div></div></div>
+  <div class="col-6 col-xl-2"><div class="vs-card p-3"><div class="text-muted small">Clientes</div><div class="fs-5 fw-bold tabular-nums mt-1">{{ total_clientes }}</div></div></div>
+  <div class="col-6 col-xl-2"><div class="vs-card p-3"><div class="text-muted small">Productos</div><div class="fs-5 fw-bold tabular-nums mt-1">{{ total_productos }}</div></div></div>
+  <div class="col-6 col-xl-2"><div class="vs-card p-3"><div class="text-muted small">Bajo inventario</div><div class="fs-5 fw-bold text-warning tabular-nums mt-1">{{ bajo_inventario }}</div></div></div>
+</div>
+
+<div class="row g-4 mb-4">
+  <div class="col-lg-6"><div class="vs-card p-4"><h2 class="h6 fw-semibold mb-3">Ventas por mes</h2><canvas id="chartMes" height="140"></canvas></div></div>
+  <div class="col-lg-6"><div class="vs-card p-4"><h2 class="h6 fw-semibold mb-3">Ingresos por período</h2><canvas id="chartDia" height="140"></canvas></div></div>
+  <div class="col-lg-6"><div class="vs-card p-4"><h2 class="h6 fw-semibold mb-3">Métodos de pago</h2><canvas id="chartMetodos" height="140"></canvas></div></div>
+  <div class="col-lg-6"><div class="vs-card p-4"><h2 class="h6 fw-semibold mb-3">Productos más vendidos</h2><canvas id="chartTopProd" height="140"></canvas></div></div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-8">
+    <div class="vs-card overflow-hidden">
+      <div class="p-3 border-bottom fw-semibold">Últimas ventas</div>
+      <div class="table-responsive">
+        <table class="table table-hover mb-0 small">
+          <thead class="table-light"><tr><th>Consecutivo</th><th>Cliente</th><th>Fecha</th><th class="text-end">Total</th><th>Estado</th></tr></thead>
+          <tbody>
+            {% for v in ultimas_ventas %}
+            <tr>
+              <td><a href="{{ url_for('ventas.detalle', venta_id=v.id) }}" class="fw-semibold">{{ v.consecutivo }}</a></td>
+              <td>{{ v.cliente.nombre_completo }}</td>
+              <td>{{ v.fecha.strftime('%d/%m/%Y') if v.fecha else '' }}</td>
+              <td class="text-end tabular-nums fw-semibold">{{ v.total|cop }}</td>
+              <td><span class="badge {% if v.estado_pago == 'Pagado' %}bg-success{% elif v.estado_pago == 'Parcial' %}bg-warning text-dark{% else %}bg-primary{% endif %}">{{ v.estado_pago }}</span></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="vs-card overflow-hidden mb-4">
+      <div class="p-3 border-bottom fw-semibold">Bajo inventario</div>
+      <ul class="list-group list-group-flush small">
+        {% for p in productos_bajos %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          <span>{{ p.nombre }}</span>
+          <span class="badge bg-warning text-dark">{{ p.cantidad_disponible }} und</span>
+        </li>
+        {% else %}
+        <li class="list-group-item text-muted">Sin alertas de stock.</li>
+        {% endfor %}
+      </ul>
+    </div>
+    <div class="vs-card overflow-hidden">
+      <div class="p-3 border-bottom fw-semibold">Últimos clientes</div>
+      <ul class="list-group list-group-flush small">
+        {% for c in ultimos_clientes %}
+        <li class="list-group-item">
+          <div class="fw-semibold">{{ c.nombre_completo }}</div>
+          <div class="text-muted">{{ c.tipo_documento }} {{ c.numero_documento }}</div>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+new Chart(document.getElementById('chartMes'), { type: 'bar', data: { labels: {{ chart_mes_labels|tojson }}, datasets: [{ label: 'Ventas COP', data: {{ chart_mes_values|tojson }}, backgroundColor: '#2563EB' }] } });
+new Chart(document.getElementById('chartDia'), { type: 'line', data: { labels: {{ chart_dia_labels|tojson }}, datasets: [{ label: 'Ingresos COP', data: {{ chart_dia_values|tojson }}, borderColor: '#172554', fill: true }] } });
+new Chart(document.getElementById('chartMetodos'), { type: 'doughnut', data: { labels: {{ chart_metodos_labels|tojson }}, datasets: [{ data: {{ chart_metodos_values|tojson }}, backgroundColor: ['#2563EB','#172554','#10B981','#F59E0B'] }] } });
+new Chart(document.getElementById('chartTopProd'), { type: 'bar', data: { labels: {{ chart_prod_labels|tojson }}, datasets: [{ label: 'Unidades', data: {{ chart_prod_values|tojson }}, backgroundColor: '#3B82F6' }] }, options: { indexAxis: 'y' } });
+</script>
+{% endblock %}

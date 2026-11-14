@@ -1,0 +1,6 @@
+{
+  "name": "VentaSmart",
+  "description": "Sistema empresarial de facturación, control de inventario y gestión de ventas con PostgreSQL (Neon).",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

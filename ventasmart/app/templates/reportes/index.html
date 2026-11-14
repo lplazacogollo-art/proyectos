@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Reportes{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div><h1 class="h3 fw-bold mb-1">Reportes Comerciales</h1><p class="text-muted small mb-0">Ventas diarias, semanales, mensuales y exportación.</p></div>
+  <a href="{{ url_for('reportes.exportar_csv', fecha_inicio=fecha_inicio, fecha_fin=fecha_fin) }}" class="btn btn-primary"><i class="bi bi-download me-1"></i> Exportar CSV</a>
+</div>
+
+<form class="vs-card p-3 mb-4 row g-2 align-items-end" method="GET">
+  <div class="col-md-4"><label class="form-label small">Fecha inicio</label><input type="date" name="fecha_inicio" value="{{ fecha_inicio }}" class="form-control"></div>
+  <div class="col-md-4"><label class="form-label small">Fecha fin</label><input type="date" name="fecha_fin" value="{{ fecha_fin }}" class="form-control"></div>
+  <div class="col-md-4"><button class="btn btn-dark w-100">Aplicar filtro</button></div>
+</form>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-4"><div class="vs-card p-3"><div class="small text-muted">Operaciones</div><div class="fs-4 fw-bold tabular-nums">{{ cantidad_ops }}</div></div></div>
+  <div class="col-md-4"><div class="vs-card p-3"><div class="small text-muted">Ingresos totales</div><div class="fs-4 fw-bold tabular-nums">{{ ingresos_totales|cop }}</div></div></div>
+  <div class="col-md-4"><div class="vs-card p-3"><div class="small text-muted">Total recaudado</div><div class="fs-4 fw-bold text-success tabular-nums">{{ total_recaudado|cop }}</div></div></div>
+</div>
+
+<div class="vs-card p-4 mb-4">
+  <h2 class="h6 fw-semibold mb-3">Ingresos por mes</h2>
+  <canvas id="repMensual" height="100"></canvas>
+</div>
+
+<div class="row g-4">
+  <div class="col-md-6">
+    <div class="vs-card overflow-hidden">
+      <div class="p-3 border-bottom fw-semibold">Productos más vendidos</div>
+      <table class="table mb-0 small"><thead><tr><th>Producto</th><th class="text-end">Und.</th><th class="text-end">Ingresos</th></tr></thead><tbody>
+        {% for p in top_productos %}<tr><td>{{ p.nombre }}</td><td class="text-end">{{ p.unidades }}</td><td class="text-end tabular-nums">{{ p.ingresos|cop }}</td></tr>{% endfor %}
+      </tbody></table>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="vs-card overflow-hidden">
+      <div class="p-3 border-bottom fw-semibold">Clientes con más compras</div>
+      <table class="table mb-0 small"><thead><tr><th>Cliente</th><th class="text-end">Compras</th><th class="text-end">Total</th></tr></thead><tbody>
+        {% for c in top_clientes %}<tr><td>{{ c.nombre_completo }}</td><td class="text-end">{{ c.compras }}</td><td class="text-end tabular-nums">{{ c.monto|cop }}</td></tr>{% endfor %}
+      </tbody></table>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+new Chart(document.getElementById('repMensual'), {
+  type: 'bar',
+  data: { labels: {{ mensuales.keys()|list|tojson }}, datasets: [{ label: 'Ingresos COP', data: {{ mensuales.values()|list|tojson }}, backgroundColor: '#2563EB' }] }
+});
+</script>
+{% endblock %}

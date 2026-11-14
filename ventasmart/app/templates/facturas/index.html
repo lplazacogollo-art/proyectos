@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Facturas y Comprobantes{% endblock %}
+{% block content %}
+<h1 class="h3 fw-bold mb-2">Historial de Comprobantes Internos</h1>
+<div class="alert alert-info small mb-4">
+  <strong>COMPROBANTE INTERNO DE VENTA:</strong> Documento administrativo y académico que no constituye una factura electrónica validada por la DIAN.
+</div>
+
+<form class="vs-card p-3 mb-4 row g-2" method="GET">
+  <div class="col-md-3"><input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Buscar comprobante o cliente"></div>
+  <div class="col-md-2"><input type="date" name="fecha_inicio" value="{{ fecha_inicio }}" class="form-control"></div>
+  <div class="col-md-2"><input type="date" name="fecha_fin" value="{{ fecha_fin }}" class="form-control"></div>
+  <div class="col-md-3">
+    <select name="cliente_id" class="form-select">
+      <option value="Todos">Todos los clientes</option>
+      {% for c in clientes %}<option value="{{ c.id }}" {% if cliente_sel == c.id|string %}selected{% endif %}>{{ c.nombre_completo }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="col-md-2"><button class="btn btn-outline-primary w-100">Filtrar</button></div>
+</form>
+
+<div class="vs-card overflow-hidden">
+  <table class="table table-hover mb-0 small align-middle">
+    <thead class="table-light"><tr><th>Comprobante</th><th>Venta</th><th>Cliente</th><th>Fecha</th><th class="text-end">Subtotal</th><th class="text-end">Desc.</th><th class="text-end">Imp.</th><th class="text-end">Total</th><th>Estado</th><th class="text-end">PDF</th></tr></thead>
+    <tbody>
+      {% for v in ventas %}
+      <tr>
+        <td class="fw-semibold">{{ v.numero_comprobante }}</td>
+        <td><a href="{{ url_for('ventas.detalle', venta_id=v.id) }}">{{ v.consecutivo }}</a></td>
+        <td>{{ v.cliente.nombre_completo }}</td>
+        <td>{{ v.fecha.strftime('%d/%m/%Y') if v.fecha else '' }}</td>
+        <td class="text-end tabular-nums">{{ v.subtotal|cop }}</td>
+        <td class="text-end tabular-nums">-{{ v.descuento_monto|cop }}</td>
+        <td class="text-end tabular-nums">{{ v.impuestos|cop }}</td>
+        <td class="text-end tabular-nums fw-bold">{{ v.total|cop }}</td>
+        <td><span class="badge {% if v.estado_pago == 'Pagado' %}bg-success{% elif v.estado_pago == 'Parcial' %}bg-warning text-dark{% else %}bg-primary{% endif %}">{{ v.estado_pago }}</span></td>
+        <td class="text-end"><a href="{{ url_for('facturas.descargar_pdf', venta_id=v.id) }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-file-earmark-pdf"></i></a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Clientes{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div><h1 class="h3 fw-bold mb-1">Gestión de Clientes</h1><p class="text-muted small mb-0">Registro, consulta, edición y control documental.</p></div>
+  <button class="btn btn-primary fw-semibold" data-bs-toggle="modal" data-bs-target="#modalNuevoCliente"><i class="bi bi-plus-lg me-1"></i> Nuevo cliente</button>
+</div>
+
+<form class="vs-card p-3 mb-4 d-flex gap-2" method="GET">
+  <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Buscar por nombre o documento...">
+  <button class="btn btn-outline-primary">Buscar</button>
+</form>
+
+<div class="vs-card overflow-hidden">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0 small align-middle">
+      <thead class="table-light"><tr><th>Documento</th><th>Nombre</th><th>Teléfono</th><th>Correo</th><th>Dirección</th><th class="text-end">Acciones</th></tr></thead>
+      <tbody>
+        {% for c in clientes %}
+        <tr>
+          <td class="fw-semibold">{{ c.tipo_documento }} {{ c.numero_documento }}</td>
+          <td>{{ c.nombre_completo }}</td>
+          <td>{{ c.telefono }}</td>
+          <td>{{ c.correo }}</td>
+          <td>{{ c.direccion }}</td>
+          <td class="text-end">
+            <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#editCliente{{ c.id }}"><i class="bi bi-pencil"></i></button>
+            <form method="POST" action="{{ url_for('clientes.eliminar', cliente_id=c.id) }}" class="d-inline">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+            </form>
+          </td>
+        </tr>
+        <div class="modal fade" id="editCliente{{ c.id }}" tabindex="-1">
+          <div class="modal-dialog">
+            <form class="modal-content" method="POST" action="{{ url_for('clientes.editar', cliente_id=c.id) }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <div class="modal-header"><h5 class="modal-title">Editar cliente</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+              <div class="modal-body row g-3">
+                <div class="col-4"><label class="form-label small">Tipo doc.</label><select name="tipo_documento" class="form-select">{% for t in ['CC','NIT','CE','TI','Pasaporte'] %}<option value="{{ t }}" {% if c.tipo_documento == t %}selected{% endif %}>{{ t }}</option>{% endfor %}</select></div>
+                <div class="col-8"><label class="form-label small">Documento</label><input name="numero_documento" value="{{ c.numero_documento }}" class="form-control" required></div>
+                <div class="col-12"><label class="form-label small">Nombre completo</label><input name="nombre_completo" value="{{ c.nombre_completo }}" class="form-control" required></div>
+                <div class="col-6"><label class="form-label small">Teléfono</label><input name="telefono" value="{{ c.telefono }}" class="form-control" required></div>
+                <div class="col-6"><label class="form-label small">Correo</label><input type="email" name="correo" value="{{ c.correo }}" class="form-control" required></div>
+                <div class="col-12"><label class="form-label small">Dirección</label><input name="direccion" value="{{ c.direccion }}" class="form-control" required></div>
+              </div>
+              <div class="modal-footer"><button type="submit" class="btn btn-primary">Guardar cambios</button></div>
+            </form>
+          </div>
+        </div>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="modal fade" id="modalNuevoCliente" tabindex="-1">
+  <div class="modal-dialog">
+    <form class="modal-content" method="POST" action="{{ url_for('clientes.crear') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="modal-header"><h5 class="modal-title">Nuevo cliente</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body row g-3">
+        <div class="col-4"><label class="form-label small">Tipo doc.</label><select name="tipo_documento" class="form-select"><option>CC</option><option>NIT</option><option>CE</option><option>TI</option><option>Pasaporte</option></select></div>
+        <div class="col-8"><label class="form-label small">Documento</label><input name="numero_documento" class="form-control" required></div>
+        <div class="col-12"><label class="form-label small">Nombre completo</label><input name="nombre_completo" class="form-control" required></div>
+        <div class="col-6"><label class="form-label small">Teléfono</label><input name="telefono" class="form-control" required></div>
+        <div class="col-6"><label class="form-label small">Correo</label><input type="email" name="correo" class="form-control" required></div>
+        <div class="col-12"><label class="form-label small">Dirección</label><input name="direccion" class="form-control" required></div>
+      </div>
+      <div class="modal-footer"><button type="submit" class="btn btn-primary">Guardar cliente</button></div>
+    </form>
+  </div>
+</div>
+{% endblock %}
