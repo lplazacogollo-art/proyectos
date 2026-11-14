@@ -113,23 +113,79 @@ async function startServer() {
     }
   });
 
+  app.post('/api/auth/guest', async (req, res) => {
+    try {
+      const rawName = String(req.body?.nombre || '').trim();
+      const displayName = rawName || 'Usuario Invitado';
+
+      let user;
+      if (!rawName) {
+        const guestEmail = 'invitado@ventasmart.co';
+        const existing = await pool.query(
+          'SELECT id, nombre, correo, rol, activo FROM usuarios WHERE LOWER(correo) = $1 LIMIT 1',
+          [guestEmail]
+        );
+        if (existing.rows.length > 0) {
+          user = existing.rows[0];
+          if (!user.activo) {
+            await pool.query('UPDATE usuarios SET activo = TRUE WHERE id = $1', [user.id]);
+          }
+        } else {
+          const hash = await bcrypt.hash(`guest-${Date.now()}-${Math.random()}`, 10);
+          const inserted = await pool.query(
+            `INSERT INTO usuarios (nombre, correo, password_hash, rol)
+             VALUES ($1, $2, $3, 'admin')
+             RETURNING id, nombre, correo, rol`,
+            [displayName, guestEmail, hash]
+          );
+          user = inserted.rows[0];
+        }
+      } else {
+        const slug = rawName
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '.')
+          .replace(/^\.+|\.+$/g, '') || 'visitante';
+        const guestEmail = `${slug}.${Date.now().toString(36)}@ventasmart.local`;
+        const hash = await bcrypt.hash(`guest-${Date.now()}-${Math.random()}`, 10);
+        const inserted = await pool.query(
+          `INSERT INTO usuarios (nombre, correo, password_hash, rol)
+           VALUES ($1, $2, $3, 'admin')
+           RETURNING id, nombre, correo, rol`,
+          [displayName, guestEmail, hash]
+        );
+        user = inserted.rows[0];
+      }
+
+      const token = signSessionToken({
+        id: user.id,
+        nombre: user.nombre,
+        correo: user.correo,
+        rol: user.rol,
+      });
+
+      res.cookie(SESSION_COOKIE, token, getSessionCookieOptions(req));
+
+      res.json({
+        user: { id: user.id, nombre: user.nombre, correo: user.correo, rol: user.rol },
+        sessionToken: token,
+        message: 'Bienvenido a VentaSmart',
+      });
+    } catch (err) {
+      console.error('Guest auth error:', err);
+      res.status(500).json({ error: 'Error al ingresar a VentaSmart.' });
+    }
+  });
+
   app.post('/api/auth/register', async (req, res) => {
     try {
       const { nombre, correo, password } = req.body ?? {};
-      if (!nombre || !correo || !password) {
-        res.status(400).json({ error: 'Todos los campos son obligatorios.' });
-        return;
-      }
-      const cleanNombre = String(nombre).trim();
-      const cleanEmail = String(correo).trim().toLowerCase();
-      if (!EMAIL_REGEX.test(cleanEmail)) {
-        res.status(400).json({ error: 'El correo electrónico no es válido.' });
-        return;
-      }
-      if (String(password).length < 6) {
-        res.status(400).json({ error: 'La contraseña debe tener al menos 6 caracteres.' });
-        return;
-      }
+      const cleanNombre = String(nombre || '').trim() || 'Usuario VentaSmart';
+      const rawEmail = String(correo || '').trim().toLowerCase();
+      const cleanEmail = rawEmail
+        ? EMAIL_REGEX.test(rawEmail)
+          ? rawEmail
+          : `${rawEmail.replace(/[^a-z0-9]+/g, '.')}.${Date.now().toString(36)}@ventasmart.local`
+        : `usuario.${Date.now().toString(36)}@ventasmart.local`;
 
       const exists = await pool.query('SELECT id FROM usuarios WHERE LOWER(correo) = $1', [cleanEmail]);
       if (exists.rows.length > 0) {
@@ -137,10 +193,11 @@ async function startServer() {
         return;
       }
 
-      const passwordHash = await bcrypt.hash(String(password), 10);
+      const rawPassword = String(password || '').trim() || `libre-${Date.now()}-${Math.random()}`;
+      const passwordHash = await bcrypt.hash(rawPassword, 10);
       const inserted = await pool.query(
         `INSERT INTO usuarios (nombre, correo, password_hash, rol)
-         VALUES ($1, $2, $3, 'vendedor')
+         VALUES ($1, $2, $3, 'admin')
          RETURNING id, nombre, correo, rol`,
         [cleanNombre, cleanEmail, passwordHash]
       );
@@ -157,11 +214,11 @@ async function startServer() {
       res.status(201).json({
         user,
         sessionToken: token,
-        message: 'Usuario registrado correctamente',
+        message: 'Bienvenido a VentaSmart',
       });
     } catch (err) {
       console.error('Register error:', err);
-      res.status(500).json({ error: 'Error al registrar usuario.' });
+      res.status(500).json({ error: 'Error al ingresar usuario.' });
     }
   });
 

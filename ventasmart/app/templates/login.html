@@ -19,10 +19,18 @@
         <span class="fs-5 fw-bold" style="color:#172554;">VentaSmart</span>
       </div>
       <h1 class="display-6 fw-bold mb-3" style="color:#0F172A;">Lo que pasa en tu negocio, hoy.</h1>
-      <p class="fs-5 fw-bold mb-4">Únete a VentaSmart ahora.</p>
+      <p class="fs-5 fw-bold mb-4">Entra fácil y sin requisitos.</p>
 
       <div class="d-grid gap-2 mb-3">
-        <a href="{{ url_for('auth.register') }}" class="btn btn-primary rounded-pill fw-bold py-2">Crear cuenta</a>
+        <form method="POST" action="{{ url_for('auth.guest_login') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn-primary rounded-pill fw-bold py-2 w-100">
+            Entrar directo sin requisitos
+          </button>
+        </form>
+        <a href="{{ url_for('auth.register') }}" class="btn btn-outline-secondary rounded-pill fw-bold py-2">
+          Entrar con tu nombre (opcional)
+        </a>
       </div>
       <div class="d-flex align-items-center gap-2 my-3 text-muted small">
         <hr class="flex-grow-1"><span>o</span><hr class="flex-grow-1">

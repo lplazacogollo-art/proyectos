@@ -114,21 +114,21 @@ export function AuthScreen({ onSuccess, addFlash }: AuthScreenProps) {
     }
   };
 
-  const handleQuickDemo = async () => {
+  const handleInstantEntry = async () => {
     setLoading(true);
     try {
-      const res = await apiFetch('/api/auth/login', {
+      const res = await apiFetch('/api/auth/guest', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ correo: 'admin@ventasmart.co', password: 'Admin2026*' }),
+        body: JSON.stringify({}),
       });
       const json = await res.json();
       if (!res.ok) {
-        addFlash('error', json.error || 'No se pudo iniciar sesión demo.');
+        addFlash('error', json.error || 'No se pudo ingresar en este momento.');
         return;
       }
       if (json.sessionToken) setSessionToken(json.sessionToken);
-      addFlash('success', json.message || 'Sesión iniciada correctamente');
+      addFlash('success', json.message || 'Bienvenido a VentaSmart');
       onSuccess(json.user);
     } catch {
       addFlash('error', 'Error de conexión con el servidor.');
@@ -180,10 +180,20 @@ export function AuthScreen({ onSuccess, addFlash }: AuthScreenProps) {
             </h1>
 
             <p className="mt-6 text-xl font-bold text-[#0F172A]">
-              Únete a VentaSmart ahora.
+              Entra fácil y sin requisitos.
             </p>
 
             <div className="mt-6 w-full max-w-[320px] space-y-3">
+              <button
+                type="button"
+                onClick={handleInstantEntry}
+                disabled={loading || googleLoading}
+                className="flex h-11 w-full items-center justify-center gap-2 rounded-full bg-[#2563EB] px-5 text-sm font-bold text-white transition-colors hover:bg-[#1D4ED8] disabled:opacity-50"
+              >
+                <ArrowRight className="h-4 w-4" />
+                {loading ? 'Ingresando...' : 'Entrar directo sin requisitos'}
+              </button>
+
               <button
                 type="button"
                 onClick={handleGoogleSignIn}
@@ -196,24 +206,14 @@ export function AuthScreen({ onSuccess, addFlash }: AuthScreenProps) {
 
               <button
                 type="button"
-                onClick={handleQuickDemo}
-                disabled={loading || googleLoading}
-                className="flex h-11 w-full items-center justify-center gap-2 rounded-full border border-slate-300 bg-white px-5 text-sm font-semibold text-[#0F172A] transition-colors hover:bg-slate-50 disabled:opacity-50"
-              >
-                <ShieldCheck className="h-4 w-4 text-[#2563EB]" />
-                {loading ? 'Ingresando...' : 'Entrar con cuenta demo'}
-              </button>
-
-              <button
-                type="button"
                 onClick={() => openModal('register')}
-                className="flex h-11 w-full items-center justify-center rounded-full bg-[#2563EB] px-5 text-sm font-bold text-white transition-colors hover:bg-[#1D4ED8]"
+                className="flex h-11 w-full items-center justify-center rounded-full border border-slate-300 bg-white px-5 text-sm font-bold text-[#0F172A] transition-colors hover:bg-slate-50"
               >
-                Crear cuenta
+                Entrar con tu nombre (opcional)
               </button>
 
               <p className="text-[11px] leading-relaxed text-[#64748B]">
-                Sistema conectado en tiempo real a Neon PostgreSQL para facturación interna, clientes, productos, pagos y reportes en COP.
+                Acceso libre e inmediato para cualquier persona o cliente nuevo: sin registro obligatorio, sin correo ni contraseña.
               </p>
 
               <div className="flex items-center gap-3 py-2">
@@ -237,7 +237,7 @@ export function AuthScreen({ onSuccess, addFlash }: AuthScreenProps) {
       </div>
 
       <footer className="border-t border-slate-200 bg-white px-6 py-3.5 text-center text-xs text-[#64748B]">
-        VentaSmart · Facturación Interna · Control de Inventario · Pagos en Pesos Colombianos (COP) · Neon PostgreSQL
+        VentaSmart · Acceso Libre · Facturación Interna · Control de Inventario · Pagos en Pesos Colombianos (COP)
       </footer>
 
       {modalMode && (
@@ -260,12 +260,12 @@ export function AuthScreen({ onSuccess, addFlash }: AuthScreenProps) {
 
             <div className="mt-5">
               <h2 className="text-2xl font-bold tracking-tight text-[#0F172A]">
-                {modalMode === 'login' ? 'Inicia sesión en VentaSmart' : 'Crea tu cuenta'}
+                {modalMode === 'login' ? 'Inicia sesión en VentaSmart' : 'Entra sin requisitos'}
               </h2>
               <p className="mt-1 text-sm text-[#64748B]">
                 {modalMode === 'login'
-                  ? 'Ingresa con Google o con tus credenciales para administrar tus operaciones.'
-                  : 'Registra un usuario operativo o vincula tu cuenta de Google.'}
+                  ? 'Ingresa con Google, entra directo o usa tu cuenta existente.'
+                  : 'Todos los campos son opcionales: escribe tu nombre o entra directo.'}
               </p>
             </div>
 
@@ -288,10 +288,9 @@ export function AuthScreen({ onSuccess, addFlash }: AuthScreenProps) {
             <form onSubmit={handleSubmit} className="space-y-4">
               {modalMode === 'register' && (
                 <div>
-                  <label className="mb-1.5 block text-xs font-semibold text-[#0F172A]">Nombre completo</label>
+                  <label className="mb-1.5 block text-xs font-semibold text-[#0F172A]">Tu nombre (opcional)</label>
                   <input
                     type="text"
-                    required
                     value={nombre}
                     onChange={(e) => setNombre(e.target.value)}
                     placeholder="Ej. María Fernanda López"
@@ -301,27 +300,30 @@ export function AuthScreen({ onSuccess, addFlash }: AuthScreenProps) {
               )}
 
               <div>
-                <label className="mb-1.5 block text-xs font-semibold text-[#0F172A]">Correo electrónico</label>
+                <label className="mb-1.5 block text-xs font-semibold text-[#0F172A]">
+                  {modalMode === 'register' ? 'Correo electrónico (opcional)' : 'Correo electrónico'}
+                </label>
                 <input
-                  type="email"
-                  required
+                  type={modalMode === 'login' ? 'email' : 'text'}
+                  required={modalMode === 'login'}
                   value={correo}
                   onChange={(e) => setCorreo(e.target.value)}
-                  placeholder="admin@ventasmart.co"
+                  placeholder="Opcional para visitantes nuevos"
                   className="h-11 w-full rounded-lg border border-slate-300 px-3.5 text-sm focus:border-[#2563EB] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/15"
                 />
               </div>
 
               <div>
-                <label className="mb-1.5 block text-xs font-semibold text-[#0F172A]">Contraseña</label>
+                <label className="mb-1.5 block text-xs font-semibold text-[#0F172A]">
+                  {modalMode === 'register' ? 'Contraseña (opcional)' : 'Contraseña'}
+                </label>
                 <div className="relative">
                   <input
                     type={showPassword ? 'text' : 'password'}
-                    required
-                    minLength={6}
+                    required={modalMode === 'login'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
+                    placeholder={modalMode === 'register' ? 'Opcional' : '••••••••'}
                     className="h-11 w-full rounded-lg border border-slate-300 pl-3.5 pr-10 text-sm focus:border-[#2563EB] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/15"
                   />
                   <button
@@ -337,16 +339,14 @@ export function AuthScreen({ onSuccess, addFlash }: AuthScreenProps) {
 
               {modalMode === 'login' && (
                 <div className="flex items-center justify-between rounded-lg bg-[#F8FAFC] px-3 py-2 text-xs text-[#64748B]">
-                  <span className="font-mono-num">admin@ventasmart.co · Admin2026*</span>
+                  <span>¿Prefieres entrar sin cuenta?</span>
                   <button
                     type="button"
-                    onClick={() => {
-                      setCorreo('admin@ventasmart.co');
-                      setPassword('Admin2026*');
-                    }}
-                    className="font-semibold text-[#2563EB] hover:underline"
+                    onClick={handleInstantEntry}
+                    className="inline-flex items-center gap-1 font-semibold text-[#2563EB] hover:underline"
                   >
-                    Usar demo
+                    <ShieldCheck className="h-3.5 w-3.5" />
+                    Acceso libre
                   </button>
                 </div>
               )}
@@ -356,7 +356,7 @@ export function AuthScreen({ onSuccess, addFlash }: AuthScreenProps) {
                 disabled={loading}
                 className="flex h-11 w-full items-center justify-center gap-2 rounded-full bg-[#172554] px-5 text-sm font-bold text-white transition-colors hover:bg-[#1e3a8a] disabled:opacity-50"
               >
-                {loading ? 'Procesando...' : modalMode === 'login' ? 'Iniciar sesión' : 'Crear cuenta'}
+                {loading ? 'Ingresando...' : modalMode === 'login' ? 'Iniciar sesión' : 'Entrar ahora'}
                 <ArrowRight className="h-4 w-4" />
               </button>
             </form>
@@ -364,13 +364,13 @@ export function AuthScreen({ onSuccess, addFlash }: AuthScreenProps) {
             <div className="mt-5 text-center text-xs text-[#64748B]">
               {modalMode === 'login' ? (
                 <>
-                  ¿No tienes una cuenta?{' '}
+                  ¿Eres nuevo?{' '}
                   <button
                     type="button"
                     onClick={() => openModal('register')}
                     className="font-semibold text-[#2563EB] hover:underline"
                   >
-                    Regístrate
+                    Entrar sin requisitos
                   </button>
                 </>
               ) : (
